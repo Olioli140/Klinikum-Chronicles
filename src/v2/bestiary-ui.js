@@ -4,6 +4,7 @@ import { ENEMY_TEMPLATES } from './data/battle-data.js';
 const app=()=>document.querySelector('#app');
 let activeTab='bestiary';
 let selectedEnemy=null;
+let deskSnapshot='';
 
 function injectStyles(){
  if(document.querySelector('#bestiary-ui-style'))return;
@@ -17,44 +18,13 @@ function injectStyles(){
 
 function roleLabel(role){return {tank:'Tank',glass:'Glaskanone',support:'Support',controller:'Kontrolle',drainer:'MP-Drain',trickster:'Trickster',summoner:'Summoner',bruiser:'Bruiser',boss:'Boss'}[role]||role||'Gegner'}
 
-function entryCard(id){
- const t=ENEMY_TEMPLATES[id];const b=bestiaryEntry(id);
- if(!t||!b)return '';
- return `<button class="bestiary-card" data-bestiary-enemy="${id}"><span class="icon">${t.emoji}</span><span><b>${t.name}</b><small>${b.category} · ${roleLabel(t.role)}</small><small>${b.habitat}</small></span></button>`;
-}
-
-function renderEnemyDetail(id){
- const t=ENEMY_TEMPLATES[id],b=bestiaryEntry(id);if(!t||!b)return '';
- const abilities=enemyAbilities(id).map(a=>`<article class="bestiary-ability"><b>${a.icon||'✨'} ${a.name}</b><small>${a.desc}</small>${a.status?`<small>Status: ${STATUS_EFFECTS[a.status]?.icon||''} ${STATUS_EFFECTS[a.status]?.name||a.status}</small>`:''}</article>`).join('');
- const resist=Object.entries(b.resist||{}).map(([sid,val])=>`<span class="bestiary-tag">${STATUS_EFFECTS[sid]?.icon||''} ${STATUS_EFFECTS[sid]?.name||sid}: ${Math.round(val*100)} % Resistenz</span>`).join('');
- return `<div class="bestiary-detail"><div class="bestiary-detail-head"><span class="icon">${t.emoji}</span><div><div class="eyebrow">${b.category.toUpperCase()}</div><h2>${t.name}</h2><small>${b.habitat}</small></div></div><p>${b.description}</p><div class="bestiary-stats"><span>❤️ HP ${t.hp}</span><span>⚔️ ATK ${t.atk}</span><span>🛡️ DEF ${t.def}</span><span>💨 SPD ${t.spd}</span><span>⭐ XP ${t.xp}</span><span>${roleLabel(t.role)}</span></div><p><b>Olivia notiert:</b> ${b.tactic}</p>${resist?`<div class="resist-list">${resist}</div>`:''}<h3>Fähigkeiten</h3><div class="bestiary-abilities">${abilities||'<p>Keine Spezialfähigkeit hinterlegt.</p>'}</div></div>`;
-}
-
-function renderBestiaryTab(){
- const ids=Object.keys(BESTIARY);
- return `${selectedEnemy?renderEnemyDetail(selectedEnemy):''}<div class="bestiary-grid">${ids.map(entryCard).join('')}</div>`;
-}
+function entryCard(id){const t=ENEMY_TEMPLATES[id];const b=bestiaryEntry(id);if(!t||!b)return '';return `<button class="bestiary-card" data-bestiary-enemy="${id}"><span class="icon">${t.emoji}</span><span><b>${t.name}</b><small>${b.category} · ${roleLabel(t.role)}</small><small>${b.habitat}</small></span></button>`}
+function renderEnemyDetail(id){const t=ENEMY_TEMPLATES[id],b=bestiaryEntry(id);if(!t||!b)return '';const abilities=enemyAbilities(id).map(a=>`<article class="bestiary-ability"><b>${a.icon||'✨'} ${a.name}</b><small>${a.desc}</small>${a.status?`<small>Status: ${STATUS_EFFECTS[a.status]?.icon||''} ${STATUS_EFFECTS[a.status]?.name||a.status}</small>`:''}</article>`).join('');const resist=Object.entries(b.resist||{}).map(([sid,val])=>`<span class="bestiary-tag">${STATUS_EFFECTS[sid]?.icon||''} ${STATUS_EFFECTS[sid]?.name||sid}: ${Math.round(val*100)} % Resistenz</span>`).join('');return `<div class="bestiary-detail"><div class="bestiary-detail-head"><span class="icon">${t.emoji}</span><div><div class="eyebrow">${b.category.toUpperCase()}</div><h2>${t.name}</h2><small>${b.habitat}</small></div></div><p>${b.description}</p><div class="bestiary-stats"><span>❤️ HP ${t.hp}</span><span>⚔️ ATK ${t.atk}</span><span>🛡️ DEF ${t.def}</span><span>💨 SPD ${t.spd}</span><span>⭐ XP ${t.xp}</span><span>${roleLabel(t.role)}</span></div><p><b>Olivia notiert:</b> ${b.tactic}</p>${resist?`<div class="resist-list">${resist}</div>`:''}<h3>Fähigkeiten</h3><div class="bestiary-abilities">${abilities||'<p>Keine Spezialfähigkeit hinterlegt.</p>'}</div></div>`}
+function renderBestiaryTab(){const ids=Object.keys(BESTIARY);return `${selectedEnemy?renderEnemyDetail(selectedEnemy):''}<div class="bestiary-grid">${ids.map(entryCard).join('')}</div>`}
 function renderAbilitiesTab(){return `<h2 class="catalog-section-title">✨ Gegnerfähigkeiten</h2><div class="catalog-list">${Object.values(ENEMY_ABILITIES).map(a=>`<article class="bestiary-ability"><b>${a.icon||'✨'} ${a.name}</b><small>${a.desc}</small><small>${a.target?`Ziel: ${a.target}`:''}${a.status?` · Status: ${STATUS_EFFECTS[a.status]?.name||a.status}`:''}</small></article>`).join('')}</div>`}
 function renderStatusTab(){return `<h2 class="catalog-section-title">🧪 Stati & Effekte</h2><div class="catalog-list">${Object.values(STATUS_EFFECTS).map(s=>`<article class="status-entry"><b>${s.icon} ${s.name}</b><small>${s.desc}</small><small>Dauer: ${s.duration} · Stapelung: ${s.stacking}</small><small>Konter: ${s.counterplay}</small></article>`).join('')}</div>`}
+function renderCatalog(){const root=app();if(!root)return;root.innerHTML=`<section class="panel apartment bestiary-shell"><div class="eyebrow">OLIVIAS SCHREIBTISCH · INTERNES KLINIK-BESTIARIUM</div><h1>📖 Bestiarium</h1><p>Olivia sammelt hier alles, was ihr im Klinikum schon einmal mit HP-Balken begegnet ist. Gegner, Fähigkeiten und Stati werden aus denselben Daten gelesen wie das Kampfsystem.</p><div class="bestiary-toolbar"><button data-bestiary-tab="bestiary" class="${activeTab==='bestiary'?'active':''}">📖 Gegner</button><button data-bestiary-tab="abilities" class="${activeTab==='abilities'?'active':''}">✨ Fähigkeiten</button><button data-bestiary-tab="statuses" class="${activeTab==='statuses'?'active':''}">🧪 Stati</button></div>${activeTab==='bestiary'?renderBestiaryTab():activeTab==='abilities'?renderAbilitiesTab():renderStatusTab()}<div class="actions"><button data-bestiary-back>← Zurück zum Schreibtisch</button></div></section>`}
+function enhanceDesk(){const root=app();if(!root||root.querySelector('[data-open-bestiary]'))return;const title=[...root.querySelectorAll('h1')].find(x=>x.textContent.includes('Schreibtisch'));if(!title)return;const back=root.querySelector('.hub-back')||root.querySelector('.actions');const card=document.createElement('div');card.className='desk-bestiary-card';card.innerHTML=`<span class="book">📖</span><div><h3>Internes Klinik-Bestiarium</h3><p>Gegnerprofile, Werte, Fähigkeiten, Stati und Olivias taktische Notizen.</p></div><button data-open-bestiary>Bestiarium öffnen →</button>`;if(back)back.before(card);else root.appendChild(card)}
 
-function renderCatalog(){
- const root=app();if(!root)return;
- root.innerHTML=`<section class="panel apartment bestiary-shell"><div class="eyebrow">OLIVIAS SCHREIBTISCH · INTERNES KLINIK-BESTIARIUM</div><h1>📖 Bestiarium</h1><p>Olivia sammelt hier alles, was ihr im Klinikum schon einmal mit HP-Balken begegnet ist. Gegner, Fähigkeiten und Stati werden aus denselben Daten gelesen wie das Kampfsystem.</p><div class="bestiary-toolbar"><button data-bestiary-tab="bestiary" class="${activeTab==='bestiary'?'active':''}">📖 Gegner</button><button data-bestiary-tab="abilities" class="${activeTab==='abilities'?'active':''}">✨ Fähigkeiten</button><button data-bestiary-tab="statuses" class="${activeTab==='statuses'?'active':''}">🧪 Stati</button></div>${activeTab==='bestiary'?renderBestiaryTab():activeTab==='abilities'?renderAbilitiesTab():renderStatusTab()}<div class="actions"><button data-bestiary-back>← Zurück zum Schreibtisch</button></div></section>`;
-}
-
-function enhanceDesk(){
- const root=app();if(!root||root.querySelector('[data-open-bestiary]'))return;
- const title=[...root.querySelectorAll('h1')].find(x=>x.textContent.includes('Schreibtisch'));if(!title)return;
- const back=root.querySelector('.hub-back')||root.querySelector('.actions');
- const card=document.createElement('div');card.className='desk-bestiary-card';card.innerHTML=`<span class="book">📖</span><div><h3>Internes Klinik-Bestiarium</h3><p>Gegnerprofile, Werte, Fähigkeiten, Stati und Olivias taktische Notizen.</p></div><button data-open-bestiary>Bestiarium öffnen →</button>`;
- if(back)back.before(card);else root.appendChild(card);
-}
-
-injectStyles();
-const observer=new MutationObserver(()=>enhanceDesk());observer.observe(document.documentElement,{subtree:true,childList:true});enhanceDesk();
-document.addEventListener('click',e=>{
- if(e.target.closest('[data-open-bestiary]')){selectedEnemy=null;activeTab='bestiary';renderCatalog();return}
- const tab=e.target.closest('[data-bestiary-tab]')?.dataset.bestiaryTab;if(tab){activeTab=tab;selectedEnemy=null;renderCatalog();return}
- const enemy=e.target.closest('[data-bestiary-enemy]')?.dataset.bestiaryEnemy;if(enemy){selectedEnemy=enemy;renderCatalog();return}
- if(e.target.closest('[data-bestiary-back]')){const root=app();const deskZone=[...document.querySelectorAll('[data-hub-zone="desk"]')][0];if(deskZone){deskZone.click();return}root.innerHTML='';location.reload()}
-});
+injectStyles();const observer=new MutationObserver(()=>enhanceDesk());observer.observe(document.documentElement,{subtree:true,childList:true});enhanceDesk();
+document.addEventListener('click',e=>{if(e.target.closest('[data-open-bestiary]')){const root=app();deskSnapshot=root?.innerHTML||'';selectedEnemy=null;activeTab='bestiary';renderCatalog();return}const tab=e.target.closest('[data-bestiary-tab]')?.dataset.bestiaryTab;if(tab){activeTab=tab;selectedEnemy=null;renderCatalog();return}const enemy=e.target.closest('[data-bestiary-enemy]')?.dataset.bestiaryEnemy;if(enemy){selectedEnemy=enemy;renderCatalog();return}if(e.target.closest('[data-bestiary-back]')){const root=app();if(root&&deskSnapshot){root.innerHTML=deskSnapshot;enhanceDesk()}return}});
