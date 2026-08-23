@@ -9,106 +9,45 @@ function hashSeed(seed, salt){
 }
 
 export class RunController {
-  constructor({meta, onMetaChange, onRunChange}){
-    this.meta = meta;
-    this.onMetaChange = onMetaChange;
-    this.onRunChange = onRunChange;
-    this.run = null;
-  }
-
-  start(seed = Date.now()){
-    this.meta.stats.runsStarted++;
-    this.run = createRunState(seed, buildPrototypeRoute());
-    this.emit();
-    return this.run;
-  }
-
-  currentRoom(){ return this.run?.route[this.run.roomIndex] || null; }
-
+  constructor({meta, onMetaChange, onRunChange}){this.meta=meta;this.onMetaChange=onMetaChange;this.onRunChange=onRunChange;this.run=null}
+  start(seed = Date.now()){this.meta.stats.runsStarted++;this.run=createRunState(seed,buildPrototypeRoute(),this.meta);this.emit();return this.run}
+  currentRoom(){return this.run?.route[this.run.roomIndex]||null}
   async enterCurrentRoom(){
-    const room = this.currentRoom();
-    if(!room) return {kind:'run-complete'};
-    if(this.run.pendingReward) return {kind:'reward-pending', choices:this.run.pendingReward};
-
-    if(room.type === ROOM_TYPES.EVENT){
-      const choices=this.generateRewardChoices(room.id);
-      this.run.pendingReward=choices;
-      this.completeRoom(room);
-      return {kind:'reward-choice', source:'event', room, choices};
+    const room=this.currentRoom(); if(!room)return {kind:'run-complete'};
+    if(this.run.pendingReward)return {kind:'reward-pending',choices:this.run.pendingReward};
+    if(room.type===ROOM_TYPES.EVENT){const choices=this.generateRewardChoices(room.id);this.completeRoom(room);this.run.pendingReward=choices;this.emit();return {kind:'reward-choice',source:'event',room,choices}}
+    const result=await startLegacyBattle(room,{party:this.run.party,run:this.run});
+    if(result.outcome==='victory'){
+      this.meta.currency.notes+=result.rewards?.notes||1;
+      const boss=room.type===ROOM_TYPES.BOSS;this.completeRoom(room);
+      if(boss)return this.finish(true);
+      const choices=this.generateRewardChoices(room.id);this.run.pendingReward=choices;this.emit();return {kind:'reward-choice',source:'battle',room,battle:result,choices};
     }
-
-    const result = await startLegacyBattle(room,{party:this.run.party,run:this.run});
-    if(result.outcome === 'victory'){
-      this.meta.currency.notes += result.rewards?.notes || 1;
-      const boss=room.type === ROOM_TYPES.BOSS;
-      this.completeRoom(room);
-      if(boss) return this.finish(true);
-      const choices=this.generateRewardChoices(room.id);
-      this.run.pendingReward=choices;
-      this.emit();
-      return {kind:'reward-choice', source:'battle', room, battle:result, choices};
-    }
-
     return this.finish(false);
   }
-
   generateRewardChoices(salt='room'){
-    const owned=new Set(this.run.relics);
-    const pool=RUN_UPGRADES.filter(x=>!owned.has(x.id));
-    const choices=[];
-    let n=hashSeed(this.run.seed, this.run.roomIndex + String(salt).length);
-    while(pool.length && choices.length<3){
-      const idx=n%pool.length;
-      choices.push(pool.splice(idx,1)[0]);
-      n=hashSeed(n, choices.length+this.run.roomIndex);
-    }
+    const owned=new Set(this.run.relics),pool=RUN_UPGRADES.filter(x=>!owned.has(x.id)),choices=[];
+    let n=hashSeed(this.run.seed,this.run.roomIndex+String(salt).length);
+    while(pool.length&&choices.length<3){const idx=n%pool.length;choices.push(pool.splice(idx,1)[0]);n=hashSeed(n,choices.length+this.run.roomIndex)}
     return choices;
   }
-
   chooseReward(id){
-    if(!this.run?.pendingReward) return null;
-    const reward=this.run.pendingReward.find(x=>x.id===id);
-    if(!reward) return null;
-    if(!this.run.relics.includes(id)) this.run.relics.push(id);
-    this.applyReward(reward);
-    this.run.pendingReward=null;
-    this.emit();
-    return reward;
+    if(!this.run?.pendingReward)return null;const reward=this.run.pendingReward.find(x=>x.id===id);if(!reward)return null;
+    if(!this.run.relics.includes(id))this.run.relics.push(id);this.applyReward(reward);this.run.pendingReward=null;this.emit();return reward;
   }
-
   applyReward(reward){
-    const party=this.run.party;
-    const olivia=party.find(c=>c.id==='olivia');
-    const lisa=party.find(c=>c.id==='lisa');
+    const party=this.run.party,olivia=party.find(c=>c.id==='olivia'),lisa=party.find(c=>c.id==='lisa');
     switch(reward.id){
-      case 'coffee-shot': this.run.resources.coffee++; break;
-      case 'neuro-focus': if(olivia) olivia.atk+=3; break;
-      case 'ward-rounds': if(lisa) lisa.def+=3; break;
-      case 'reserve-fluids': party.forEach(c=>c.hp=Math.min(c.maxHp,c.hp+Math.ceil(c.maxHp*.25))); break;
-      case 'diagnostic-edge': party.forEach(c=>c.crit+=8); break;
-      case 'team-briefing': party.forEach(c=>c.spd+=1); break;
-      case 'emergency-snack': party.forEach(c=>{c.maxMp+=6;c.mp=c.maxMp}); break;
+      case 'coffee-shot':this.run.resources.coffee++;break;
+      case 'neuro-focus':if(olivia)olivia.atk+=3;break;
+      case 'ward-rounds':if(lisa)lisa.def+=3;break;
+      case 'reserve-fluids':party.forEach(c=>c.hp=Math.min(c.maxHp,c.hp+Math.ceil(c.maxHp*.25)));break;
+      case 'diagnostic-edge':party.forEach(c=>c.crit+=8);break;
+      case 'team-briefing':party.forEach(c=>c.spd+=1);break;
+      case 'emergency-snack':party.forEach(c=>{c.maxMp+=6;c.mp=c.maxMp});break;
     }
   }
-
-  completeRoom(room){
-    this.run.visited.push(room.id);
-    this.run.roomIndex++;
-    this.meta.stats.roomsCleared++;
-    this.emit();
-  }
-
-  finish(won){
-    this.run.status = won ? 'won' : 'lost';
-    if(won) this.meta.stats.runsWon++; else this.meta.stats.runsLost++;
-    const summary = {kind:'run-finished', won, run:this.run};
-    this.run = null;
-    this.emit();
-    return summary;
-  }
-
-  emit(){
-    this.onMetaChange?.(this.meta);
-    this.onRunChange?.(this.run);
-  }
+  completeRoom(room){this.run.visited.push(room.id);this.run.roomIndex++;this.meta.stats.roomsCleared++;this.emit()}
+  finish(won){this.run.status=won?'won':'lost';if(won)this.meta.stats.runsWon++;else this.meta.stats.runsLost++;const summary={kind:'run-finished',won,run:this.run};this.run=null;this.emit();return summary}
+  emit(){this.onMetaChange?.(this.meta);this.onRunChange?.(this.run)}
 }
