@@ -9,7 +9,7 @@ export function loadMeta(){
 }
 
 export function saveMeta(meta){
-  localStorage.setItem(META_KEY, JSON.stringify(meta));
+  localStorage.setItem(META_KEY, JSON.stringify(normalizeMeta(meta)));
 }
 
 export function loadRun(){
