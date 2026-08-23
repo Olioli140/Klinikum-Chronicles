@@ -1,9 +1,9 @@
 export const HUB_UPGRADES={
  coffeeMachine:{name:'Espressomaschine',icon:'☕',room:'Küche',max:3,costs:[4,7,11],desc:'Jede Stufe gibt +1 Kaffee zu Beginn einer Schicht.',effect:l=>`+${l} Start-Kaffee`},
- bookshelf:{name:'Fachbibliothek',icon:'📚',room:'Schreibtisch',max:3,costs:[5,8,12],desc:'Lehrbücher verbessern die Auswertung nach Kämpfen.',effect:l=>`+${l*5}% Kampf-EP`},
+ bookshelf:{name:'Fachbibliothek',icon:'📚',room:'Schreibtisch',max:3,costs:[5,8,12],desc:'Mehr Fachwissen erweitert die mentale Reserve der Party.',effect:l=>`+${l*3} Max-MP`},
  medicineCabinet:{name:'Hausapotheke',icon:'🧰',room:'Flur',max:2,costs:[6,10],desc:'Bessere Vorbereitung erhöht die maximale HP der Party.',effect:l=>`+${l*4} Max-HP`},
  shoeRack:{name:'Dienstschuh-Regal',icon:'👟',room:'Flur',max:2,costs:[6,10],desc:'Gute Schuhe machen die gesamte Party etwas schneller.',effect:l=>`+${l} SPD`},
- sofa:{name:'Feierabend-Sofa',icon:'🛋️',room:'Wohnzimmer',max:2,costs:[5,9],desc:'Bessere Erholung zwischen Begegnungen.',effect:l=>`+${l*5}% Erholung`}
+ sofa:{name:'Feierabend-Sofa',icon:'🛋️',room:'Wohnzimmer',max:2,costs:[5,9],desc:'Erholung zu Hause gibt der Party mehr Widerstandskraft.',effect:l=>`+${l} DEF`}
 };
 export const HUB_ZONES=[
  {id:'party',icon:'👥',name:'Dienstplan',desc:'Party, Skillpunkte, Synergien und Ausrüstung verwalten.'},
