@@ -1,1 +1,1 @@
-import 'https://cdn.jsdelivr.net/gh/Olioli140/Klinikum-Chronicles@25f2a65253bad78cea5d22c9cb2e51a95c257e7f/src/v2/app.js';
+import 'https://cdn.jsdelivr.net/gh/Olioli140/Klinikum-Chronicles@2849e156b604d0a4cac4e98270c3d475c2da903e/src/v2/app.js';
