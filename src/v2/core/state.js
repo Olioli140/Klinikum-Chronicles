@@ -1,3 +1,5 @@
+import { createStartingParty } from '../data/battle-data.js';
+
 export const META_VERSION = 1;
 
 export function createMetaState(){
@@ -22,6 +24,7 @@ export function createRunState(seed, route){
     relics: [],
     modifiers: [],
     resources: { coffee: 1 },
+    party: createStartingParty(),
     status: 'active'
   };
 }
