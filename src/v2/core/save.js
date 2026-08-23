@@ -1,10 +1,10 @@
-import { createMetaState } from './state.js';
+import { createMetaState, normalizeMeta } from './state.js';
 
 const META_KEY = 'klinikum-chronicles-v2-meta';
 const RUN_KEY = 'klinikum-chronicles-v2-run';
 
 export function loadMeta(){
-  try { return JSON.parse(localStorage.getItem(META_KEY)) || createMetaState(); }
+  try { return normalizeMeta(JSON.parse(localStorage.getItem(META_KEY)) || createMetaState()); }
   catch { return createMetaState(); }
 }
 
