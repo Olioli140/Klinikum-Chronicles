@@ -9,6 +9,7 @@ export const HUB_ZONES=[
  {id:'party',icon:'👥',name:'Dienstplan',desc:'Party, Skillpunkte, Synergien und Ausrüstung verwalten.'},
  {id:'phone',icon:'📱',name:'Telefon',desc:'Anrufe, Story-Fortschritt und besondere Aufträge.'},
  {id:'desk',icon:'💻',name:'Schreibtisch',desc:'Forschung, Fachbibliothek und Meta-Fortschritt.'},
+ {id:'wardrobe',icon:'🚪',name:'Kleiderschrank',desc:'Inventar ansehen, Besitz prüfen und Ausrüstung verwalten.'},
  {id:'kitchen',icon:'☕',name:'Küche',desc:'Kaffee und Vorbereitung für die nächste Schicht.'},
  {id:'living',icon:'🛋️',name:'Wohnzimmer',desc:'Erholung, Erinnerungen und spätere Besucher.'},
  {id:'hall',icon:'🚪',name:'Flur',desc:'Hausapotheke und Dienstvorbereitung.'},
