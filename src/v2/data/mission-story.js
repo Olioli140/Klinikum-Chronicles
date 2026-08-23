@@ -37,6 +37,36 @@ const STORIES={
   ],
   win:{speaker:'Tobi',portrait:'🦴',title:'01:18 · Nach dem Schockraum',text:'Der letzte Patient ist versorgt. Tobi lässt sich auf einen Stuhl fallen und schaut Olivia an. „Du bist erstaunlich brauchbar für Neurologie.“ Ein kurzes Grinsen. „Wenn ihr mal jemanden braucht, der Dinge zusammenhält, während alles auseinanderfällt: Sag Bescheid.“ Tobi ist jetzt als Partymitglied verfügbar.'},
   lose:{speaker:'Tobi',portrait:'🦴',title:'Heute reicht es nicht',text:'Tobi schüttelt den Kopf, ohne Vorwurf. „Das war zu viel für eine Mannschaft. Wir holen Verstärkung und machen das sauber.“ Bevor Olivia geht, fügt er hinzu: „Ruf mich wieder an, wenn du es nochmal versuchen willst.“'}
+ },
+ phone_olivia_facharzt:{
+  intro:{speaker:'Sekretariat Neurologie',portrait:'🎓',title:'📱 Anruf · Facharztprüfung',text:'„Frau Kollegin, Sie haben die Voraussetzungen erfüllt. Der Termin steht.“ Olivia schaut auf das Telefon. All die Nachtdienste, Konsile und völlig unnötigen Faxgeräte führen plötzlich zu einem einzigen Wort: Facharztprüfung.'},
+  beats:[
+   {at:2,speaker:'Olivia',portrait:'🧠',title:'Prüfungstag · Fallvorstellung',text:'Der erste Fall wirkt harmlos, bis die dritte Information alles verändert. Olivia zwingt sich, nicht schneller zu antworten als sie denkt.'},
+   {at:5,speaker:'Prüfer',portrait:'📚',title:'„Und was machen Sie jetzt?“',text:'Keine Multiple-Choice-Antwort. Kein Oberarzt im Hintergrund. Nur eine Entscheidung, die medizinisch begründet werden muss.'},
+   {at:8,speaker:'Olivia',portrait:'🧠',title:'Letzter Fall',text:'Olivia legt den Reflexhammer auf den Tisch. „Ich würde zuerst das Problem lokalisieren. Danach entscheide ich, was davon wirklich behandelt werden muss.“'}
+  ],
+  win:{speaker:'Prüfer',portrait:'🎓',title:'Bestanden',text:'„Herzlichen Glückwunsch. Fachärztin für Neurologie.“ Für einen Moment ist Olivia still. Dann vibriert schon wieder das Diensttelefon. Natürlich.'},
+  lose:{speaker:'Olivia',portrait:'📖',title:'Noch nicht',text:'Die Prüfung endet, bevor Olivia zufrieden ist. Ärgerlich, aber eindeutig: Das Wissen ist da, die Entscheidungssicherheit noch nicht durchgehend. Sie wird wiederkommen.'}
+ },
+ phone_olivia_epileptologie:{
+  intro:{speaker:'Epileptologie',portrait:'⚡',title:'📱 Konsil · Status',text:'Ein Patient krampft trotz Therapie weiter. Das EEG läuft, Medikamente sind gegeben, und jede Minute verändert die Situation. Olivia merkt schnell: Hier gewinnt nicht der stärkste Angriff, sondern das bessere Timing.'},
+  beats:[
+   {at:2,speaker:'Olivia',portrait:'🧠',title:'EEG-Platz',text:'„Nicht jedem Ausschlag hinterherlaufen. Erst verstehen, welcher davon die Richtung vorgibt.“'},
+   {at:5,speaker:'Erzähler',portrait:'⚡',title:'Kontrollfenster',text:'Der Verlauf wird zu einem Kampf um Unterbrechungen, kurze sichere Fenster und die richtige Eskalation.'},
+   {at:7,speaker:'Olivia',portrait:'🧠',title:'Entscheidung',text:'Olivia erkennt, dass genau diese Art von Präzision ihr liegt: beobachten, antizipieren, im richtigen Moment kompromisslos handeln.'}
+  ],
+  win:{speaker:'Olivia',portrait:'⚡',title:'Schwerpunkt gewählt',text:'Olivia entscheidet sich für Epileptologie. Der neue Skilltree wird auf Kontrolle, Stun, Unterbrechungen und Burst-Fenster ausgerichtet.'},
+  lose:{speaker:'Erzähler',portrait:'📉',title:'Der Status bleibt hartnäckig',text:'Der Fall zwingt das Team zum Rückzug und zur Verstärkung. Die Spezialisierungsentscheidung bleibt offen.'}
+ },
+ phone_olivia_neuroimmunologie:{
+  intro:{speaker:'Neuroimmunologie',portrait:'🧬',title:'📱 Konsil · Der zähe Verlauf',text:'Nichts passt sauber zusammen: neue Symptome, alte Befunde, widersprüchliche Laborwerte. Olivia wird zu einem Fall gerufen, bei dem die wichtigste Fähigkeit nicht Tempo ist, sondern Muster über Zeit zu erkennen.'},
+  beats:[
+   {at:2,speaker:'Olivia',portrait:'🧠',title:'Befundwand',text:'„Wir behandeln nicht nur den aktuellen Treffer. Wir müssen verhindern, dass der nächste überhaupt entsteht.“'},
+   {at:5,speaker:'Erzähler',portrait:'🧬',title:'Langer Atem',text:'Der Fall belohnt Stabilisierung, Reinigung von negativen Effekten und kontrollierte langfristige Vorteile statt kurzer Schadensspitzen.'},
+   {at:7,speaker:'Olivia',portrait:'🧠',title:'Entscheidung',text:'Olivia merkt, dass ihr diese Art von Medizin gefällt: komplex, systemisch und selten mit einer einzigen spektakulären Antwort erledigt.'}
+  ],
+  win:{speaker:'Olivia',portrait:'🧬',title:'Schwerpunkt gewählt',text:'Olivia entscheidet sich für Neuroimmunologie. Der neue Skilltree wird auf Sustain, Cleanse, Buffs und langfristige Kontrolle ausgerichtet.'},
+  lose:{speaker:'Erzähler',portrait:'📉',title:'Noch kein Schwerpunkt',text:'Der Fall bleibt zu unübersichtlich. Olivia vertagt die Entscheidung, statt sie aus Frust zu treffen.'}
  }
 };
 export function missionStory(id){return STORIES[id]||null}
