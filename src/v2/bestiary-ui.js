@@ -1,0 +1,60 @@
+import { BESTIARY, ENEMY_ABILITIES, STATUS_EFFECTS, bestiaryEntry, enemyAbilities } from './data/enemy-catalog.js';
+import { ENEMY_TEMPLATES } from './data/battle-data.js';
+
+const app=()=>document.querySelector('#app');
+let activeTab='bestiary';
+let selectedEnemy=null;
+
+function injectStyles(){
+ if(document.querySelector('#bestiary-ui-style'))return;
+ const style=document.createElement('style');
+ style.id='bestiary-ui-style';
+ style.textContent=`
+ .desk-bestiary-card{margin:18px 0;padding:16px;border:1px solid #365d7a;border-radius:14px;background:linear-gradient(145deg,#0c2032,#112b41);display:flex;gap:14px;align-items:center;justify-content:space-between}.desk-bestiary-card .book{font-size:2.4rem}.desk-bestiary-card h3{margin:.1rem 0}.desk-bestiary-card p{margin:.25rem 0}.desk-bestiary-card button{white-space:nowrap}.bestiary-shell{max-width:980px;margin:auto}.bestiary-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.bestiary-toolbar button.active{border-color:var(--gold);box-shadow:0 0 14px #ffd16633}.bestiary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bestiary-card{display:flex;gap:12px;align-items:flex-start;text-align:left;background:#0b1c2d;border:1px solid #284a67;border-radius:12px;padding:13px;width:100%;min-height:100px}.bestiary-card .icon{font-size:2rem}.bestiary-card b,.bestiary-card small{display:block}.bestiary-card small{color:var(--muted);margin-top:3px}.bestiary-detail{background:#091725;border:1px solid #365d7a;border-radius:14px;padding:18px;margin:16px 0}.bestiary-detail-head{display:flex;gap:14px;align-items:center}.bestiary-detail-head .icon{font-size:3.4rem}.bestiary-stats{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.bestiary-stats span,.bestiary-tag{background:#132a44;border:1px solid #284a67;border-radius:999px;padding:6px 9px;font-size:.8rem}.bestiary-abilities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.bestiary-ability,.status-entry{background:#0b1c2d;border:1px solid #284a67;border-radius:10px;padding:12px}.bestiary-ability b,.bestiary-ability small,.status-entry b,.status-entry small{display:block}.bestiary-ability small,.status-entry small{color:var(--muted);margin-top:4px}.catalog-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.catalog-section-title{margin:22px 0 10px}.resist-list{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}@media(max-width:650px){.desk-bestiary-card{align-items:flex-start;flex-direction:column}.desk-bestiary-card button{width:100%}.bestiary-grid,.bestiary-abilities,.catalog-list{grid-template-columns:1fr}}
+ `;
+ document.head.appendChild(style);
+}
+
+function roleLabel(role){return {tank:'Tank',glass:'Glaskanone',support:'Support',controller:'Kontrolle',drainer:'MP-Drain',trickster:'Trickster',summoner:'Summoner',bruiser:'Bruiser',boss:'Boss'}[role]||role||'Gegner'}
+
+function entryCard(id){
+ const t=ENEMY_TEMPLATES[id];const b=bestiaryEntry(id);
+ if(!t||!b)return '';
+ return `<button class="bestiary-card" data-bestiary-enemy="${id}"><span class="icon">${t.emoji}</span><span><b>${t.name}</b><small>${b.category} · ${roleLabel(t.role)}</small><small>${b.habitat}</small></span></button>`;
+}
+
+function renderEnemyDetail(id){
+ const t=ENEMY_TEMPLATES[id],b=bestiaryEntry(id);if(!t||!b)return '';
+ const abilities=enemyAbilities(id).map(a=>`<article class="bestiary-ability"><b>${a.icon||'✨'} ${a.name}</b><small>${a.desc}</small>${a.status?`<small>Status: ${STATUS_EFFECTS[a.status]?.icon||''} ${STATUS_EFFECTS[a.status]?.name||a.status}</small>`:''}</article>`).join('');
+ const resist=Object.entries(b.resist||{}).map(([sid,val])=>`<span class="bestiary-tag">${STATUS_EFFECTS[sid]?.icon||''} ${STATUS_EFFECTS[sid]?.name||sid}: ${Math.round(val*100)} % Resistenz</span>`).join('');
+ return `<div class="bestiary-detail"><div class="bestiary-detail-head"><span class="icon">${t.emoji}</span><div><div class="eyebrow">${b.category.toUpperCase()}</div><h2>${t.name}</h2><small>${b.habitat}</small></div></div><p>${b.description}</p><div class="bestiary-stats"><span>❤️ HP ${t.hp}</span><span>⚔️ ATK ${t.atk}</span><span>🛡️ DEF ${t.def}</span><span>💨 SPD ${t.spd}</span><span>⭐ XP ${t.xp}</span><span>${roleLabel(t.role)}</span></div><p><b>Olivia notiert:</b> ${b.tactic}</p>${resist?`<div class="resist-list">${resist}</div>`:''}<h3>Fähigkeiten</h3><div class="bestiary-abilities">${abilities||'<p>Keine Spezialfähigkeit hinterlegt.</p>'}</div></div>`;
+}
+
+function renderBestiaryTab(){
+ const ids=Object.keys(BESTIARY);
+ return `${selectedEnemy?renderEnemyDetail(selectedEnemy):''}<div class="bestiary-grid">${ids.map(entryCard).join('')}</div>`;
+}
+function renderAbilitiesTab(){return `<h2 class="catalog-section-title">✨ Gegnerfähigkeiten</h2><div class="catalog-list">${Object.values(ENEMY_ABILITIES).map(a=>`<article class="bestiary-ability"><b>${a.icon||'✨'} ${a.name}</b><small>${a.desc}</small><small>${a.target?`Ziel: ${a.target}`:''}${a.status?` · Status: ${STATUS_EFFECTS[a.status]?.name||a.status}`:''}</small></article>`).join('')}</div>`}
+function renderStatusTab(){return `<h2 class="catalog-section-title">🧪 Stati & Effekte</h2><div class="catalog-list">${Object.values(STATUS_EFFECTS).map(s=>`<article class="status-entry"><b>${s.icon} ${s.name}</b><small>${s.desc}</small><small>Dauer: ${s.duration} · Stapelung: ${s.stacking}</small><small>Konter: ${s.counterplay}</small></article>`).join('')}</div>`}
+
+function renderCatalog(){
+ const root=app();if(!root)return;
+ root.innerHTML=`<section class="panel apartment bestiary-shell"><div class="eyebrow">OLIVIAS SCHREIBTISCH · INTERNES KLINIK-BESTIARIUM</div><h1>📖 Bestiarium</h1><p>Olivia sammelt hier alles, was ihr im Klinikum schon einmal mit HP-Balken begegnet ist. Gegner, Fähigkeiten und Stati werden aus denselben Daten gelesen wie das Kampfsystem.</p><div class="bestiary-toolbar"><button data-bestiary-tab="bestiary" class="${activeTab==='bestiary'?'active':''}">📖 Gegner</button><button data-bestiary-tab="abilities" class="${activeTab==='abilities'?'active':''}">✨ Fähigkeiten</button><button data-bestiary-tab="statuses" class="${activeTab==='statuses'?'active':''}">🧪 Stati</button></div>${activeTab==='bestiary'?renderBestiaryTab():activeTab==='abilities'?renderAbilitiesTab():renderStatusTab()}<div class="actions"><button data-bestiary-back>← Zurück zum Schreibtisch</button></div></section>`;
+}
+
+function enhanceDesk(){
+ const root=app();if(!root||root.querySelector('[data-open-bestiary]'))return;
+ const title=[...root.querySelectorAll('h1')].find(x=>x.textContent.includes('Schreibtisch'));if(!title)return;
+ const back=root.querySelector('.hub-back')||root.querySelector('.actions');
+ const card=document.createElement('div');card.className='desk-bestiary-card';card.innerHTML=`<span class="book">📖</span><div><h3>Internes Klinik-Bestiarium</h3><p>Gegnerprofile, Werte, Fähigkeiten, Stati und Olivias taktische Notizen.</p></div><button data-open-bestiary>Bestiarium öffnen →</button>`;
+ if(back)back.before(card);else root.appendChild(card);
+}
+
+injectStyles();
+const observer=new MutationObserver(()=>enhanceDesk());observer.observe(document.documentElement,{subtree:true,childList:true});enhanceDesk();
+document.addEventListener('click',e=>{
+ if(e.target.closest('[data-open-bestiary]')){selectedEnemy=null;activeTab='bestiary';renderCatalog();return}
+ const tab=e.target.closest('[data-bestiary-tab]')?.dataset.bestiaryTab;if(tab){activeTab=tab;selectedEnemy=null;renderCatalog();return}
+ const enemy=e.target.closest('[data-bestiary-enemy]')?.dataset.bestiaryEnemy;if(enemy){selectedEnemy=enemy;renderCatalog();return}
+ if(e.target.closest('[data-bestiary-back]')){const root=app();const deskZone=[...document.querySelectorAll('[data-hub-zone="desk"]')][0];if(deskZone){deskZone.click();return}root.innerHTML='';location.reload()}
+});
