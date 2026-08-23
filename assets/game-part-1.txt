@@ -1,0 +1,129 @@
+>
+  <div id="screen-gameover" class="hidden">
+    <h1>💀 SCHICHTENDE.</h1>
+    <p style="color:var(--text-dim); font-size:20px;">Die Station war zu viel für euch. Aber nach dem Kaffee geht's weiter.</p>
+    <button onclick="Game.retryBattle()">Kampf wiederholen</button>
+  </div>
+
+  <!-- ENDING -->
+  <div id="screen-ending" class="hidden">
+    <div class="cross" style="font-size:60px;">🏆</div>
+    <h1>Feierabend.<br>Das Klinikum ist gerettet.</h1>
+    <p>Olivia, Lisa, Falco, Daniel und Tobi haben jede Diagnose gestellt, jeden
+    Angehörigen beruhigt und jeden Kollegen überzeugt. Zeit für wohlverdienten
+    Kaffee in der Cafeteria.</p>
+    <button onclick="Game.backToTitle()">Zurück zum Titel</button>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   DATA
+===================================================================== */
+const CHAR_DEFS = {
+  olivia:{ name:"Olivia", role:"Neurologin", color:"var(--olivia)", emoji:"🧠", join:0,
+    base:{hp:42,mp:22,atk:10,def:6,spd:8} },
+  lisa:{ name:"Lisa", role:"Internistin", color:"var(--lisa)", emoji:"🩺", join:3,
+    base:{hp:44,mp:26,atk:8,def:7,spd:6} },
+  falco:{ name:"Falco", role:"Gynäkologe", color:"var(--falco)", emoji:"👶", join:5,
+    base:{hp:40,mp:24,atk:11,def:6,spd:7} },
+  daniel:{ name:"Daniel", role:"Anästhesist", color:"var(--daniel)", emoji:"💉", join:7,
+    base:{hp:38,mp:28,atk:9,def:5,spd:9} },
+  tobi:{ name:"Tobi", role:"Unfallchirurg", color:"var(--tobi)", emoji:"🦴", join:9,
+    base:{hp:52,mp:16,atk:13,def:9,spd:5} },
+};
+
+/* Jeder Baum hat 2 aktive Pfade (A: Offensiv/Debuff, B: Support/Heal) + Passiv-Knoten je Tier,
+   die sich zu einem Tier-3-Zweigskill und einem gemeinsamen Tier-4-Kapazitäts-Ultimate verdichten.
+   Passiv-Knoten ("passive_*") erhöhen Werte dauerhaft und tauchen NICHT im Kampfmenü auf. */
+const SKILL_TREES = {
+  olivia:[
+    {id:"reflexhammer", tier:1, cost:1, req:null, name:"Reflexhammer", mp:5, type:"dmg", power:1.0, target:"single",
+      desc:"Schneller Schlag mit dem Reflexhammer. Pfad: Therapie."},
+    {id:"diagblick", tier:1, cost:1, req:null, name:"Diagnose-Blick", mp:8, type:"dmg", power:1.25, target:"single",
+      desc:"Findet die Schwachstelle. Pfad: Diagnostik."},
+    {id:"neuro_grundlagen", tier:1, cost:1, req:null, name:"Neuro-Grundlagen", mp:0, type:"passive_atk", amt:2, target:"self",
+      desc:"Passiv: +2 Angriff dauerhaft."},
+    {id:"eeg", tier:2, cost:1, req:"diagblick", name:"EEG-Analyse", mp:10, type:"buff_atk", power:0.25, target:"party",
+      desc:"Analysiert Muster – Angriff der Party steigt. Diagnostik."},
+    {id:"migraenebann", tier:2, cost:1, req:"reflexhammer", name:"Migräne-Bann", mp:12, type:"heal", power:1.1, target:"single",
+      desc:"Lindert Schmerz – heilt eine Person. Therapie."},
+    {id:"konzentration", tier:2, cost:1, req:"neuro_grundlagen", name:"Konzentrationstechnik", mp:0, type:"passive_mp", amt:8, target:"self",
+      desc:"Passiv: +8 maximales MP dauerhaft."},
+    {id:"nervenblock", tier:3, cost:2, req:"eeg", name:"Peripherer Nervenblock", mp:16, type:"dmg", power:1.7, target:"single",
+      desc:"Diagnostik-Zweig: massiver Einzelschaden."},
+    {id:"therapieplan", tier:3, cost:2, req:"migraenebann", name:"Ganzheitlicher Therapieplan", mp:18, type:"heal_all", power:1.0, target:"party",
+      desc:"Therapie-Zweig: heilt die ganze Party."},
+    {id:"diffdiagnose", tier:4, cost:2, req:["nervenblock","therapieplan"], name:"Differenzialdiagnose Supreme", mp:22, type:"dmg_all", power:0.95, target:"all",
+      desc:"Ultimate: trifft jede mögliche Diagnose gleichzeitig. Flächenschaden."},
+  ],
+  lisa:[
+    {id:"infusion", tier:1, cost:1, req:null, name:"Infusion", mp:8, type:"heal", power:1.1, target:"single", desc:"Stabilisiert eine Person mit Infusion. Pfad: Therapie."},
+    {id:"blutbild", tier:1, cost:1, req:null, name:"Blutbild", mp:6, type:"debuff_def", power:0.2, target:"single", desc:"Findet Schwächen – senkt Verteidigung. Pfad: Diagnostik."},
+    {id:"anamnese", tier:1, cost:1, req:null, name:"Gründliche Anamnese", mp:0, type:"passive_def", amt:2, target:"self", desc:"Passiv: +2 Verteidigung dauerhaft."},
+    {id:"antibiotikum", tier:2, cost:1, req:"infusion", name:"Breitband-Antibiotikum", mp:16, type:"heal_all", power:0.9, target:"party", desc:"Heilt die ganze Party. Therapie."},
+    {id:"diffbild", tier:2, cost:1, req:"blutbild", name:"Differentialdiagnose", mp:10, type:"dmg", power:1.2, target:"single", desc:"Präziser Treffer nach Anamnese. Diagnostik."},
+    {id:"laborroutine", tier:2, cost:1, req:"anamnese", name:"Laborroutine", mp:0, type:"passive_mp", amt:8, target:"self", desc:"Passiv: +8 maximales MP dauerhaft."},
+    {id:"intensivmedizin", tier:3, cost:2, req:"antibiotikum", name:"Intensivmedizin", mp:18, type:"heal", power:2.0, target:"single", desc:"Therapie-Zweig: sehr starke Einzelheilung."},
+    {id:"sepsisprotokoll", tier:3, cost:2, req:"diffbild", name:"Sepsis-Protokoll", mp:16, type:"dmg", power:1.7, target:"single", desc:"Diagnostik-Zweig: massiver Einzelschaden."},
+    {id:"chefvisite", tier:4, cost:2, req:["intensivmedizin","sepsisprotokoll"], name:"Chefarztvisite-Autorität", mp:22, type:"buff_def_all", power:0.35, target:"party", desc:"Ultimate: ruhige Autorität – Verteidigung der Party steigt stark."},
+  ],
+  falco:[
+    {id:"ultraschall", tier:1, cost:1, req:null, name:"Ultraschall", mp:7, type:"debuff_def", power:0.25, target:"single", desc:"Deckt Schwachpunkte auf. Pfad: Diagnostik."},
+    {id:"sanftehand", tier:1, cost:1, req:null, name:"Sanfte Hand", mp:9, type:"heal", power:1.15, target:"single", desc:"Beruhigende Behandlung, heilt HP. Pfad: Therapie."},
+    {id:"einfuehlsam", tier:1, cost:1, req:null, name:"Einfühlsames Auftreten", mp:0, type:"passive_atk", amt:2, target:"self", desc:"Passiv: +2 Angriff dauerhaft."},
+    {id:"hormontherapie", tier:2, cost:1, req:"sanftehand", name:"Hormontherapie", mp:12, type:"buff_atk", power:0.3, target:"party", desc:"Steigert die Kampfkraft der Party. Therapie."},
+    {id:"praezision", tier:2, cost:1, req:"ultraschall", name:"Präzisionsschnitt", mp:11, type:"dmg", power:1.3, target:"single", desc:"Chirurgisch präziser Treffer. Diagnostik."},
+    {id:"routinecheck", tier:2, cost:1, req:"einfuehlsam", name:"Routine-Check", mp:0, type:"passive_hp", amt:10, target:"self", desc:"Passiv: +10 maximale HP dauerhaft."},
+    {id:"wehenmanagement", tier:3, cost:2, req:"hormontherapie", name:"Wehen-Management", mp:18, type:"heal_all", power:1.0, target:"party", desc:"Therapie-Zweig: heilt die ganze Party."},
+    {id:"notsectio", tier:3, cost:2, req:"praezision", name:"Not-Sectio", mp:16, type:"dmg", power:1.7, target:"single", desc:"Diagnostik-Zweig: massiver Einzelschaden."},
+    {id:"notkaiserschnitt", tier:4, cost:2, req:["wehenmanagement","notsectio"], name:"Notkaiserschnitt", mp:26, type:"dmg", power:2.3, target:"single", desc:"Ultimate: dramatischer Rettungseinsatz. Verheerender Einzelschaden."},
+  ],
+  daniel:[
+    {id:"intubation", tier:1, cost:1, req:null, name:"Intubation", mp:7, type:"dmg", power:1.15, target:"single", desc:"Kontrollierter, präziser Angriff. Pfad: Kontrolle."},
+    {id:"schmerzmittel", tier:1, cost:1, req:null, name:"Schmerzmittel", mp:8, type:"buff_def_all", power:0.2, target:"party", desc:"Dämpft eingehenden Schaden. Pfad: Team."},
+    {id:"praemedikation", tier:1, cost:1, req:null, name:"Prämedikation", mp:0, type:"passive_spd", amt:2, target:"self", desc:"Passiv: +2 Initiative dauerhaft."},
+    {id:"vollnarkose", tier:2, cost:1, req:"intubation", name:"Vollnarkose", mp:14, type:"stun", power:0, target:"single", desc:"Setzt einen Gegner für eine Runde außer Gefecht. Kontrolle."},
+    {id:"adrenalin", tier:2, cost:1, req:"schmerzmittel", name:"Adrenalinstoß", mp:13, type:"buff_spd_all", power:0.3, target:"party", desc:"Die Party wird spürbar schneller. Team."},
+    {id:"ueberwachung", tier:2, cost:1, req:"praemedikation", name:"Lückenlose Überwachung", mp:0, type:"passive_crit", amt:8, target:"self", desc:"Passiv: +8% kritische Trefferchance dauerhaft."},
+    {id:"doppelblock", tier:3, cost:2, req:"vollnarkose", name:"Doppelblock", mp:18, type:"dmg", power:1.7, target:"single", desc:"Kontroll-Zweig: massiver Einzelschaden."},
+    {id:"teamkoordination", tier:3, cost:2, req:"adrenalin", name:"Teamkoordination", mp:16, type:"buff_atk", power:0.35, target:"party", desc:"Team-Zweig: starker Angriffsbuff für die Party."},
+    {id:"propofolschock", tier:4, cost:2, req:["doppelblock","teamkoordination"], name:"Propofol-Schock", mp:24, type:"dmg_all", power:1.15, target:"all", desc:"Ultimate: riskanter Vollnarkose-Schock auf alle Gegner."},
+  ],
+  tobi:[
+    {id:"skalpell", tier:1, cost:1, req:null, name:"Skalpellhieb", mp:5, type:"dmg", power:1.3, target:"single", desc:"Roher, direkter Schnitt. Pfad: Chirurgie."},
+    {id:"fixateur", tier:1, cost:1, req:null, name:"Fixateur Externe", mp:6, type:"buff_def", power:0.35, target:"single", desc:"Stabilisiert eine Person. Pfad: Trauma-Team."},
+    {id:"erste_hilfe", tier:1, cost:1, req:null, name:"Erste-Hilfe-Routine", mp:0, type:"passive_hp", amt:12, target:"self", desc:"Passiv: +12 maximale HP dauerhaft."},
+    {id:"notoperation", tier:2, cost:1, req:"skalpell", name:"Notoperation", mp:16, type:"heal", power:1.6, target:"single", desc:"Riskante, aber wirkungsvolle Notoperation. Chirurgie."},
+    {id:"adrenalinstoss2", tier:2, cost:1, req:"fixateur", name:"Trauma-Adrenalin", mp:12, type:"buff_atk", power:0.35, target:"party", desc:"Rohe Energie für die ganze Party. Trauma-Team."},
+    {id:"kraftsport", tier:2, cost:1, req:"erste_hilfe", name:"Krafttraining", mp:0, type:"passive_atk", amt:3, target:"self", desc:"Passiv: +3 Angriff dauerhaft."},
+    {id:"traumachirurgie", tier:3, cost:2, req:"notoperation", name:"Traumachirurgie", mp:20, type:"heal", power:2.1, target:"single", desc:"Chirurgie-Zweig: sehr starke Einzelheilung."},
+    {id:"vollewucht", tier:3, cost:2, req:"adrenalinstoss2", name:"Volle Wucht", mp:14, type:"dmg", power:1.6, target:"single", desc:"Trauma-Team-Zweig: kraftvoller Einzelschaden."},
+    {id:"radikalschnitt", tier:4, cost:2, req:["traumachirurgie","vollewucht"], name:"Radikalschnitt", mp:28, type:"dmg", power:2.5, target:"single", desc:"Ultimate: der letzte Ausweg. Verheerender Einzelschaden."},
+  ],
+};
+
+const ENEMY_TEMPLATES = {
+  verwirrter_patient:{name:"Verwirrter Patient", emoji:"🧟", hp:22, atk:5, def:2, spd:4, xp:12},
+  google_vater:{name:"Der Google-Vater", emoji:"📱", hp:26, atk:6, def:3, spd:5, xp:14},
+  schwindel_geist:{name:"Schwindel-Geist", emoji:"🌀", hp:24, atk:7, def:2, spd:8, xp:14},
+  radiologie_kollege:{name:"Unerreichbarer Radiologe", emoji:"☎️", hp:34, atk:7, def:5, spd:5, xp:20},
+  hypochonder:{name:"Hypochonder-Zwilling", emoji:"😰", hp:20, atk:5, def:2, spd:6, xp:12},
+  blutdruck_spitze:{name:"Blutdruck-Spitze", emoji:"📈", hp:30, atk:8, def:3, spd:7, xp:18},
+  chefarzt_visite:{name:"Chefarzt-Visite", emoji:"🥼", hp:70, atk:10, def:6, spd:6, xp:60, boss:true},
+  chaos_gegner:{name:"Notaufnahme-Chaos", emoji:"🚑", hp:26, atk:7, def:3, spd:7, xp:16},
+  ungeduldiger_ehemann:{name:"Ungeduldiger Ehemann", emoji:"😤", hp:28, atk:8, def:3, spd:6, xp:18},
+  anaesthesie_komplikation:{name:"Anästhesie-Komplikation", emoji:"⚠️", hp:38, atk:9, def:5, spd:8, xp:24},
+  buerokratie_daemon:{name:"Bürokratie-Dämon", emoji:"📋", hp:40, atk:6, def:8, spd:3, xp:22},
+  zebra_boss:{name:"Das Zebra (seltene Erkrankung)", emoji:"🦓", hp:90, atk:12, def:7, spd:9, xp:80, boss:true},
+  masi:{name:"Massenanfall-Verletzter", emoji:"🩸", hp:26, atk:8, def:4, spd:6, xp:18},
+  multiorganversagen:{name:"Multiorganversagen", emoji:"☠️", hp:150, atk:14, def:9, spd:8, xp:200, boss:true},
+};
+
+const FLOORS = [
+  { id:1, name:"Aufnahme", icon:"🏥", intro:[["olivia","Erste Schicht auf der Neurologie. Aufnahme ist schon voll... typisch."]], enemies:["verwirrter_patient"], outro:[["olivia","Diagnose gestellt. Weiter geht's."]] },
+  { id:2, name:"Ambulanz", icon:"🚶", intro:[["olivia","Ein Angehöriger, der 'alles schon gegoogelt' hat. Bitte nicht."]], enemies:["google_vater","schwindel_geist"], outro:[["olivia","Nein, es ist kein Hirntumor. Es ist Stress."]] },
+  { id:3, name:"Innere Medizin", icon:"💊", intro:[["???","Hey! Brauchst du Verstärkung? Ich hab hier eh nichts zu tun, weil die Radiologie nicht abhebt."],["olivia","Lisa! Genau richtig. Willkommen im Team."]], joinBefore:"lisa", enemies:["radiologie_kollege"], outro:[["lisa","Ruf doch bitte mal zurück, wenn du einen Befund hast!"]] },
+  { id:4, name:"Kardiologie", icon:"❤️",
+    intro:[["lisa","Zwei 
