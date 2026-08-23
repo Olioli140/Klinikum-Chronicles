@@ -25,12 +25,13 @@ export class RunController {
 
     if(room.type === ROOM_TYPES.EVENT){
       const reward = RUN_UPGRADES[(this.run.roomIndex + this.run.seed) % RUN_UPGRADES.length];
-      this.run.relics.push(reward.id);
+      if(!this.run.relics.includes(reward.id)) this.run.relics.push(reward.id);
+      if(reward.id === 'coffee-shot') this.run.resources.coffee++;
       this.completeRoom(room);
       return {kind:'event', room, reward};
     }
 
-    const result = await startLegacyBattle(room);
+    const result = await startLegacyBattle(room,{party:this.run.party,run:this.run});
     if(result.outcome === 'victory'){
       this.meta.currency.notes += result.rewards?.notes || 1;
       this.completeRoom(room);
