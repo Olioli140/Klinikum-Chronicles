@@ -1,62 +1,51 @@
-import { createPartyFromIds } from '../data/battle-data.js';
+import { createPartyFromIds, CHAR_DEFS } from '../data/battle-data.js';
 
-export const META_VERSION = 3;
+export const META_VERSION = 4;
+
+function defaultCharacterProgress(){
+  const out={};
+  for(const id of Object.keys(CHAR_DEFS)) out[id]={level:1,xp:0,xpNext:30,skillPoints:2,unlocked:[...(CHAR_DEFS[id].skills||[])]};
+  return out;
+}
 
 export function createMetaState(){
   return {
-    version: META_VERSION,
-    currency: { notes: 0 },
-    unlocks: { relics: [], companions: ['lisa'], skills: ['reflexhammer'] },
-    partySelection: ['lisa'],
-    apartment: { coffeeMachine: 0 },
-    relationships: {},
-    storyFlags: {},
-    stats: { runsStarted: 0, runsWon: 0, runsLost: 0, roomsCleared: 0 }
+    version:META_VERSION,
+    currency:{notes:0},
+    unlocks:{relics:[],companions:['lisa'],skills:['reflexhammer']},
+    partySelection:['lisa'],
+    characters:defaultCharacterProgress(),
+    apartment:{coffeeMachine:0},relationships:{},storyFlags:{},
+    stats:{runsStarted:0,runsWon:0,runsLost:0,roomsCleared:0}
   };
 }
 
 export function normalizeMeta(meta){
-  const base=createMetaState();
-  const m=meta||base;
-  m.version=META_VERSION;
-  m.currency={...base.currency,...m.currency};
-  m.unlocks={...base.unlocks,...m.unlocks};
-  if(!Array.isArray(m.unlocks.skills)) m.unlocks.skills=['reflexhammer'];
-  if(!m.unlocks.skills.includes('reflexhammer')) m.unlocks.skills.unshift('reflexhammer');
-  if(!Array.isArray(m.unlocks.companions)) m.unlocks.companions=['lisa'];
-  if(!m.unlocks.companions.includes('lisa')) m.unlocks.companions.unshift('lisa');
-  if(!Array.isArray(m.partySelection)) m.partySelection=['lisa'];
-  m.partySelection=m.partySelection.filter(id=>m.unlocks.companions.includes(id)).slice(0,4);
-  m.apartment={...base.apartment,...m.apartment};
-  m.stats={...base.stats,...m.stats};
-  unlockCompanionsByProgress(m);
-  return m;
+  const base=createMetaState(),m=meta||base;m.version=META_VERSION;
+  m.currency={...base.currency,...m.currency};m.unlocks={...base.unlocks,...m.unlocks};m.characters={...base.characters,...(m.characters||{})};
+  if(!Array.isArray(m.unlocks.skills))m.unlocks.skills=['reflexhammer'];if(!m.unlocks.skills.includes('reflexhammer'))m.unlocks.skills.unshift('reflexhammer');
+  if(!Array.isArray(m.unlocks.companions))m.unlocks.companions=['lisa'];if(!m.unlocks.companions.includes('lisa'))m.unlocks.companions.unshift('lisa');
+  if(!Array.isArray(m.partySelection))m.partySelection=['lisa'];m.partySelection=m.partySelection.filter(id=>m.unlocks.companions.includes(id)).slice(0,4);
+  for(const id of Object.keys(CHAR_DEFS)){
+    const d=base.characters[id],p=m.characters[id]||{};m.characters[id]={...d,...p};
+    if(!Array.isArray(m.characters[id].unlocked))m.characters[id].unlocked=[...(CHAR_DEFS[id].skills||[])];
+    m.characters[id].unlocked=[...new Set([...(CHAR_DEFS[id].skills||[]),...m.characters[id].unlocked])];
+  }
+  // migrate previous Olivia research unlocks into her character skill list
+  m.characters.olivia.unlocked=[...new Set([...m.characters.olivia.unlocked,...m.unlocks.skills])];
+  m.apartment={...base.apartment,...m.apartment};m.stats={...base.stats,...m.stats};unlockCompanionsByProgress(m);return m;
 }
 
-export function unlockCompanionsByProgress(meta){
-  const milestones=[['falco',1],['daniel',2],['tobi',3]];
-  for(const [id,wins] of milestones){if((meta.stats?.runsWon||0)>=wins&&!meta.unlocks.companions.includes(id))meta.unlocks.companions.push(id)}
+export function unlockCompanionsByProgress(meta){for(const [id,wins] of [['falco',1],['daniel',2],['tobi',3]])if((meta.stats?.runsWon||0)>=wins&&!meta.unlocks.companions.includes(id))meta.unlocks.companions.push(id)}
+
+export function syncCharacterProgress(meta,party){
+  if(!meta.characters)meta.characters=defaultCharacterProgress();
+  for(const c of party||[]){meta.characters[c.id]={level:c.level,xp:c.xp,xpNext:c.xpNext,skillPoints:c.skillPoints,unlocked:[...c.unlocked]}}
 }
 
-export function createRunState(seed, route, meta){
-  unlockCompanionsByProgress(meta);
-  const selected=(meta?.partySelection||[]).filter(id=>meta.unlocks.companions.includes(id)).slice(0,4);
-  const party=createPartyFromIds(['olivia',...selected]);
-  const olivia=party.find(c=>c.id==='olivia');
-  if(olivia && meta?.unlocks?.skills) olivia.unlocked=[...new Set(['reflexhammer',...meta.unlocks.skills])];
-  return {
-    id: `run-${Date.now()}`,
-    seed,
-    route,
-    roomIndex: 0,
-    visited: [],
-    relics: [],
-    modifiers: [],
-    resources: { coffee: 1 + (meta?.apartment?.coffeeMachine||0) },
-    party,
-    pendingReward:null,
-    status: 'active'
-  };
+export function createRunState(seed,route,meta){
+  unlockCompanionsByProgress(meta);const selected=(meta?.partySelection||[]).filter(id=>meta.unlocks.companions.includes(id)).slice(0,4);
+  const party=createPartyFromIds(['olivia',...selected],meta.characters||{});
+  return {id:`run-${Date.now()}`,seed,route,roomIndex:0,visited:[],relics:[],modifiers:[],resources:{coffee:1+(meta?.apartment?.coffeeMachine||0)},party,pendingReward:null,status:'active'};
 }
-
 export function clone(value){return JSON.parse(JSON.stringify(value));}
