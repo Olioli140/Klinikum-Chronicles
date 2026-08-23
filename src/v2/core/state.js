@@ -1,8 +1,8 @@
 import { createPartyFromIds, CHAR_DEFS } from '../data/battle-data.js';
 import { PASSIVE_SKILLS, activeSynergies } from '../data/party-builds.js';
-import { EQUIPMENT, starterEquipment, emptyLoadout } from '../data/equipment.js';
+import { EQUIPMENT, starterEquipment, inventoryExpansionGrant, emptyLoadout, inventoryCounts, canEquip } from '../data/equipment.js';
 
-export const META_VERSION=9;
+export const META_VERSION=10;
 const defaultApartment=()=>({coffeeMachine:0,bookshelf:0,medicineCabinet:0,shoeRack:0,sofa:0});
 const defaultCareer=()=>({stage:'resident',facharzt:false,specialization:null,examReady:false});
 
@@ -16,12 +16,25 @@ export function createMetaState(){
   return{version:META_VERSION,currency:{notes:0},unlocks:{relics:[],companions:['lisa'],skills:['reflexhammer'],equipment:starterEquipment()},partySelection:['lisa'],characters:defaultCharacterProgress(),apartment:defaultApartment(),relationships:{},storyFlags:{completedMissions:[]},stats:{runsStarted:0,runsWon:0,runsLost:0,roomsCleared:0}};
 }
 
+function normalizeEquipmentAssignments(m){
+  const remaining=inventoryCounts(m.unlocks.equipment||[]);
+  for(const id of Object.keys(CHAR_DEFS)){
+    const p=m.characters[id];if(!p)continue;
+    for(const slot of Object.keys(emptyLoadout())){
+      const itemId=p.equipment?.[slot];if(!itemId)continue;
+      const item=EQUIPMENT[itemId];
+      if(!item||item.slot!==slot||!canEquip(id,item)||(remaining[itemId]||0)<=0){p.equipment[slot]=null;continue;}
+      remaining[itemId]--;
+    }
+  }
+}
+
 export function normalizeMeta(meta){
-  const base=createMetaState(),m=meta||base;
-  m.version=META_VERSION;
+  const base=createMetaState(),m=meta||base,oldVersion=Number(meta?.version)||0;
   m.currency={...base.currency,...m.currency};
   m.unlocks={...base.unlocks,...m.unlocks};
   if(!Array.isArray(m.unlocks.equipment))m.unlocks.equipment=starterEquipment();
+  if(oldVersion>0&&oldVersion<10)m.unlocks.equipment.push(...inventoryExpansionGrant());
   m.characters={...base.characters,...(m.characters||{})};
   if(!Array.isArray(m.unlocks.skills))m.unlocks.skills=['reflexhammer'];
   if(!m.unlocks.skills.includes('reflexhammer'))m.unlocks.skills.unshift('reflexhammer');
@@ -38,11 +51,13 @@ export function normalizeMeta(meta){
     if(m.characters[id].level>=30&&!career.facharzt)career.examReady=true;
     if(career.facharzt){career.stage='facharzt';career.examReady=false;}
   }
+  normalizeEquipmentAssignments(m);
   m.characters.olivia.unlocked=[...new Set([...m.characters.olivia.unlocked,...m.unlocks.skills])];
   m.apartment={...defaultApartment(),...(m.apartment||{})};
   m.stats={...base.stats,...m.stats};
   m.storyFlags={...(m.storyFlags||{})};
   if(!Array.isArray(m.storyFlags.completedMissions))m.storyFlags.completedMissions=[];
+  m.version=META_VERSION;
   return m;
 }
 
@@ -62,6 +77,7 @@ function applyApartmentBonuses(party,meta){const a=meta.apartment||{};for(const 
 function applyStaticSynergies(party,synergies){const get=id=>party.find(c=>c.id===id);if(synergies.some(s=>s.id==='neuro_gyn'))party.forEach(c=>c.crit+=5);if(synergies.some(s=>s.id==='shock_room')&&get('tobi'))get('tobi').def+=2;if(synergies.some(s=>s.id==='airway_team'))for(const id of ['daniel','tobi'])if(get(id))get(id).spd+=1}
 
 export function createRunState(seed,route,meta){
+  normalizeEquipmentAssignments(meta);
   const selected=(meta?.partySelection||[]).filter(id=>meta.unlocks.companions.includes(id)).slice(0,4),party=createPartyFromIds(['olivia',...selected],meta.characters||{});
   applyPassiveSkills(party);applyEquipment(party,meta);applyApartmentBonuses(party,meta);
   const synergies=activeSynergies(party.map(c=>c.id));applyStaticSynergies(party,synergies);const a=meta.apartment||{};
