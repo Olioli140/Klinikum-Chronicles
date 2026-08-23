@@ -18,7 +18,7 @@ function renderHub(){
     <section class="panel apartment">
       <div class="eyebrow">ROGUELITE v0.2 · DEV</div>
       <h1>🏠 Olivias Wohnung</h1>
-      <p>Feierabend. Hier bleiben permanente Fortschritte erhalten. Der JRPG-Kampf selbst bleibt ein getrenntes System.</p>
+      <p>Feierabend. Die Wohnung ist der permanente Hub; eine Schicht ist ein Roguelite-Run mit klassischem JRPG-Kampf.</p>
       <div class="stats">
         <div><span>Forschungsnotizen</span><strong>📚 ${meta.currency.notes}</strong></div>
         <div><span>Gestartete Schichten</span><strong>${meta.stats.runsStarted}</strong></div>
@@ -39,18 +39,22 @@ function renderRun(){
   const run = controller.run;
   const room = controller.currentRoom();
   const route = run.route.map((r,i)=>`<div class="node ${i<run.roomIndex?'done':''} ${i===run.roomIndex?'current':''}"><span>${i+1}</span><b>${r.title}</b><small>${r.type}</small></div>`).join('');
+  const party = run.party.map(c=>`<div class="run-party-card"><b style="color:${c.color}">${c.emoji} ${c.name}</b><small>Lv${c.level} · HP ${c.hp}/${c.maxHp} · MP ${c.mp}/${c.maxMp}</small></div>`).join('');
+  const relics = run.relics.length ? run.relics.join(' · ') : 'noch keine';
   app.innerHTML = `
     <section class="panel hospital">
       <div class="eyebrow">AKTUELLE SCHICHT</div>
       <h1>🏥 Klinikum</h1>
-      <p>Run ${run.id} · Räume ${run.roomIndex}/8 · temporäre Upgrades: ${run.relics.length}</p>
+      <p>Run ${run.id} · Raum ${Math.min(run.roomIndex+1,8)}/8 · ☕ ${run.resources.coffee}</p>
+      <div class="run-party">${party}</div>
+      <p class="relic-line"><b>Run-Upgrades:</b> ${relics}</p>
       <div class="route">${route}</div>
       <div class="encounter">
         <h2>${room ? room.title : 'Schicht abgeschlossen'}</h2>
         <p>${room ? room.type.toUpperCase() : ''}</p>
         ${room ? button(room.type==='event'?'Event ausführen':'JRPG-Kampf betreten','enter') : ''}
       </div>
-      <p class="note">Kämpfe laufen aktuell bewusst über den Battle-Adapter. Bis der bestehende JRPG-Kern extrahiert ist, verwendet der Dev-Shell einen Platzhalterdialog.</p>
+      <p class="note">v0.2 Vertical Slice: Der Kampf läuft jetzt als eigenständige JRPG-Engine. Run- und Meta-System kennen nur Ergebnis und Belohnung.</p>
     </section>`;
 }
 
