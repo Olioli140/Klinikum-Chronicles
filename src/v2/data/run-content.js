@@ -3,10 +3,18 @@ export const ROOM_TYPES = {
 };
 
 export const RUN_UPGRADES = [
-  {id:'coffee-shot', name:'Doppelter Espresso', text:'+1 Kaffee für diese Schicht.'},
-  {id:'reflex-routine', name:'Reflex-Routine', text:'Reflexhammer verursacht 25 % mehr Schaden.'},
-  {id:'quiet-call', name:'Ruhiges Konsil', text:'Elite-Situationen werden künftig günstiger.'},
-  {id:'night-focus', name:'Nachtdienst-Fokus', text:'Reserviert für einen späteren Low-Resource-Build.'}
+  {id:'coffee-shot', name:'Doppelter Espresso', icon:'☕', text:'+1 Kaffee für diese Schicht.'},
+  {id:'reflex-routine', name:'Reflex-Routine', icon:'🔨', text:'Reflexhammer verursacht 25 % mehr Schaden.'},
+  {id:'neuro-focus', name:'Neuro-Fokus', icon:'🧠', text:'Olivia erhält +3 ATK für diese Schicht.'},
+  {id:'ward-rounds', name:'Stationsroutine', icon:'🩺', text:'Lisa erhält +3 DEF für diese Schicht.'},
+  {id:'reserve-fluids', name:'Reserve-Infusion', icon:'💧', text:'Die Party heilt sofort 25 % ihrer maximalen HP.'},
+  {id:'night-focus', name:'Nachtdienst-Fokus', icon:'🌙', text:'Unter 50 % HP verursachen Angriffe 30 % mehr Schaden.'},
+  {id:'quiet-call', name:'Ruhiges Konsil', icon:'☎️', text:'Gegner verursachen 10 % weniger Schaden.'},
+  {id:'diagnostic-edge', name:'Diagnostischer Vorsprung', icon:'🔬', text:'Kritische Trefferchance der Party +8 %.'},
+  {id:'team-briefing', name:'Team-Briefing', icon:'📋', text:'Die gesamte Party erhält +1 Initiative.'},
+  {id:'emergency-snack', name:'Notfall-Snack', icon:'🍫', text:'Maximale MP der Party +6 und sofort aufgefüllt.'},
+  {id:'steady-hands', name:'Ruhige Hände', icon:'🫶', text:'Heilfähigkeiten wirken 25 % stärker.'},
+  {id:'teaching-round', name:'Lehrvisite', icon:'📚', text:'Nach Kämpfen gibt es 20 % mehr EP.'}
 ];
 
 export function buildPrototypeRoute(){
