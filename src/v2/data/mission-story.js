@@ -26,6 +26,17 @@ const STORIES={
   ],
   win:{speaker:'Falco',portrait:'👶',title:'Nach dem Kreißsaal',text:'Falco lehnt sich erschöpft gegen die Wand. „Wenn ihr nochmal jemanden für eure völlig normalen, überhaupt nicht chaotischen Dienste braucht… ruft mich an.“ Falco ist jetzt als Partymitglied verfügbar.'},
   lose:{speaker:'Falco',portrait:'👶',title:'Nicht heute',text:'„Wir kriegen das hier hin. Aber heute war das zu viel auf einmal.“ Falco nickt Olivia zu. „Versuchen wir es nochmal, wenn wir beide geschlafen haben.“'}
+ },
+ phone_tobi:{
+  intro:{speaker:'Tobi',portrait:'🦴',title:'📱 Eingehender Anruf · 22:37',text:'„Olivia? Schockraum eins. Mehrere Verletzte, die halbe Mannschaft hängt noch im OP und ich brauche jemanden, der den Überblick behält.“ Im Hintergrund piept etwas viel zu schnell. „Wenn du Zeit hast: jetzt wäre ein guter Moment.“'},
+  beats:[
+   {at:1,speaker:'Erzähler',portrait:'🚑',title:'22:49 · Schockraum',text:'Die Tür geht auf und sofort ist klar: Das hier ist kein einzelnes Problem. Monitore, Stimmen, Tragen, Telefonate. Tobi steht mitten im Chaos und wirkt nur deshalb ruhig, weil alle anderen dafür keine Zeit haben.',party:{lisa:'Lisa zieht sich Handschuhe an. „Gut. Dann sortieren wir zuerst, was wirklich dringend ist.“',daniel:'Daniel wirft einen Blick Richtung Atemwegswagen. „Ich kümmere mich um alles, was nicht warten kann.“',falco:'Falco nickt Tobi zu. „Sag einfach, wo du mich brauchst.“'}},
+   {at:3,speaker:'Tobi',portrait:'🦴',title:'23:16 · Keine Pause',text:'„Der nächste kommt in fünf Minuten.“ Tobi sieht Olivia an. „Und bevor du fragst: Nein, das ist keine optimistische Fünf.“',party:{lisa:'Lisa murmelt: „Ich vermisse gerade die Tagschicht.“',daniel:'Daniel antwortet trocken: „Ich vermisse gerade Sauerstoff in Flaschen, die tatsächlich voll sind.“',falco:'Falco grinst müde. „Immerhin langweilt sich niemand.“'}},
+   {at:5,speaker:'Olivia',portrait:'🧠',title:'00:02 · Das Team findet seinen Rhythmus',text:'Am Anfang war es nur Schadensbegrenzung. Jetzt greifen die Abläufe ineinander. Tobi hält die Front, Olivia priorisiert, das Team schließt die Lücken. Zum ersten Mal wirkt der Schockraum nicht mehr wie ein Gegner, sondern wie etwas, das man gemeinsam kontrollieren kann.'},
+   {at:7,speaker:'Erzähler',portrait:'🚨',title:'00:41 · Letzter Alarm',text:'Noch einmal gehen die Türen auf. Noch einmal wird es laut. Tobi schaut kurz zu Olivia und nickt nur. Keine große Ansage mehr. Die Rollen sind klar.'}
+  ],
+  win:{speaker:'Tobi',portrait:'🦴',title:'01:18 · Nach dem Schockraum',text:'Der letzte Patient ist versorgt. Tobi lässt sich auf einen Stuhl fallen und schaut Olivia an. „Du bist erstaunlich brauchbar für Neurologie.“ Ein kurzes Grinsen. „Wenn ihr mal jemanden braucht, der Dinge zusammenhält, während alles auseinanderfällt: Sag Bescheid.“ Tobi ist jetzt als Partymitglied verfügbar.'},
+  lose:{speaker:'Tobi',portrait:'🦴',title:'Heute reicht es nicht',text:'Tobi schüttelt den Kopf, ohne Vorwurf. „Das war zu viel für eine Mannschaft. Wir holen Verstärkung und machen das sauber.“ Bevor Olivia geht, fügt er hinzu: „Ruf mich wieder an, wenn du es nochmal versuchen willst.“'}
  }
 };
 export function missionStory(id){return STORIES[id]||null}
