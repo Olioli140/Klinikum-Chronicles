@@ -1,12 +1,13 @@
-import { createStartingParty } from '../data/battle-data.js';
+import { createPartyFromIds } from '../data/battle-data.js';
 
-export const META_VERSION = 2;
+export const META_VERSION = 3;
 
 export function createMetaState(){
   return {
     version: META_VERSION,
     currency: { notes: 0 },
-    unlocks: { relics: [], companions: [], skills: ['reflexhammer'] },
+    unlocks: { relics: [], companions: ['lisa'], skills: ['reflexhammer'] },
+    partySelection: ['lisa'],
     apartment: { coffeeMachine: 0 },
     relationships: {},
     storyFlags: {},
@@ -22,13 +23,25 @@ export function normalizeMeta(meta){
   m.unlocks={...base.unlocks,...m.unlocks};
   if(!Array.isArray(m.unlocks.skills)) m.unlocks.skills=['reflexhammer'];
   if(!m.unlocks.skills.includes('reflexhammer')) m.unlocks.skills.unshift('reflexhammer');
+  if(!Array.isArray(m.unlocks.companions)) m.unlocks.companions=['lisa'];
+  if(!m.unlocks.companions.includes('lisa')) m.unlocks.companions.unshift('lisa');
+  if(!Array.isArray(m.partySelection)) m.partySelection=['lisa'];
+  m.partySelection=m.partySelection.filter(id=>m.unlocks.companions.includes(id)).slice(0,4);
   m.apartment={...base.apartment,...m.apartment};
   m.stats={...base.stats,...m.stats};
+  unlockCompanionsByProgress(m);
   return m;
 }
 
+export function unlockCompanionsByProgress(meta){
+  const milestones=[['falco',1],['daniel',2],['tobi',3]];
+  for(const [id,wins] of milestones){if((meta.stats?.runsWon||0)>=wins&&!meta.unlocks.companions.includes(id))meta.unlocks.companions.push(id)}
+}
+
 export function createRunState(seed, route, meta){
-  const party=createStartingParty();
+  unlockCompanionsByProgress(meta);
+  const selected=(meta?.partySelection||[]).filter(id=>meta.unlocks.companions.includes(id)).slice(0,4);
+  const party=createPartyFromIds(['olivia',...selected]);
   const olivia=party.find(c=>c.id==='olivia');
   if(olivia && meta?.unlocks?.skills) olivia.unlocked=[...new Set(['reflexhammer',...meta.unlocks.skills])];
   return {
@@ -46,6 +59,4 @@ export function createRunState(seed, route, meta){
   };
 }
 
-export function clone(value){
-  return JSON.parse(JSON.stringify(value));
-}
+export function clone(value){return JSON.parse(JSON.stringify(value));}
