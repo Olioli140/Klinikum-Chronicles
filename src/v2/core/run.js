@@ -2,6 +2,12 @@ import { createRunState } from './state.js';
 import { buildPrototypeRoute, ROOM_TYPES, RUN_UPGRADES } from '../data/run-content.js';
 import { startLegacyBattle } from '../adapters/legacy-battle.js';
 
+function hashSeed(seed, salt){
+  let x=(Number(seed)||1) ^ ((salt+1)*0x9e3779b9);
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  return Math.abs(x>>>0);
+}
+
 export class RunController {
   constructor({meta, onMetaChange, onRunChange}){
     this.meta = meta;
@@ -22,24 +28,67 @@ export class RunController {
   async enterCurrentRoom(){
     const room = this.currentRoom();
     if(!room) return {kind:'run-complete'};
+    if(this.run.pendingReward) return {kind:'reward-pending', choices:this.run.pendingReward};
 
     if(room.type === ROOM_TYPES.EVENT){
-      const reward = RUN_UPGRADES[(this.run.roomIndex + this.run.seed) % RUN_UPGRADES.length];
-      if(!this.run.relics.includes(reward.id)) this.run.relics.push(reward.id);
-      if(reward.id === 'coffee-shot') this.run.resources.coffee++;
+      const choices=this.generateRewardChoices(room.id);
+      this.run.pendingReward=choices;
       this.completeRoom(room);
-      return {kind:'event', room, reward};
+      return {kind:'reward-choice', source:'event', room, choices};
     }
 
     const result = await startLegacyBattle(room,{party:this.run.party,run:this.run});
     if(result.outcome === 'victory'){
       this.meta.currency.notes += result.rewards?.notes || 1;
+      const boss=room.type === ROOM_TYPES.BOSS;
       this.completeRoom(room);
-      if(room.type === ROOM_TYPES.BOSS) return this.finish(true);
-      return {kind:'battle-victory', room, result};
+      if(boss) return this.finish(true);
+      const choices=this.generateRewardChoices(room.id);
+      this.run.pendingReward=choices;
+      this.emit();
+      return {kind:'reward-choice', source:'battle', room, battle:result, choices};
     }
 
     return this.finish(false);
+  }
+
+  generateRewardChoices(salt='room'){
+    const owned=new Set(this.run.relics);
+    const pool=RUN_UPGRADES.filter(x=>!owned.has(x.id));
+    const choices=[];
+    let n=hashSeed(this.run.seed, this.run.roomIndex + String(salt).length);
+    while(pool.length && choices.length<3){
+      const idx=n%pool.length;
+      choices.push(pool.splice(idx,1)[0]);
+      n=hashSeed(n, choices.length+this.run.roomIndex);
+    }
+    return choices;
+  }
+
+  chooseReward(id){
+    if(!this.run?.pendingReward) return null;
+    const reward=this.run.pendingReward.find(x=>x.id===id);
+    if(!reward) return null;
+    if(!this.run.relics.includes(id)) this.run.relics.push(id);
+    this.applyReward(reward);
+    this.run.pendingReward=null;
+    this.emit();
+    return reward;
+  }
+
+  applyReward(reward){
+    const party=this.run.party;
+    const olivia=party.find(c=>c.id==='olivia');
+    const lisa=party.find(c=>c.id==='lisa');
+    switch(reward.id){
+      case 'coffee-shot': this.run.resources.coffee++; break;
+      case 'neuro-focus': if(olivia) olivia.atk+=3; break;
+      case 'ward-rounds': if(lisa) lisa.def+=3; break;
+      case 'reserve-fluids': party.forEach(c=>c.hp=Math.min(c.maxHp,c.hp+Math.ceil(c.maxHp*.25))); break;
+      case 'diagnostic-edge': party.forEach(c=>c.crit+=8); break;
+      case 'team-briefing': party.forEach(c=>c.spd+=1); break;
+      case 'emergency-snack': party.forEach(c=>{c.maxMp+=6;c.mp=c.maxMp}); break;
+    }
   }
 
   completeRoom(room){
